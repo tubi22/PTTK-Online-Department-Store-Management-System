@@ -64,7 +64,8 @@ PTTK-Online-Department-Store-Management-System/
     │       └── unittest/
     │           ├── TestMatHangDAO4.java
     │           ├── TestTKKhachHangDAO4.java
-    │           └── TestHoaDonDAO4.java
+    │           ├── TestHoaDonDAO4.java
+    │           └── TestThanhVienDAO4.java
     └── WebContent/
         ├── index.jsp                    # Tự động chuyển hướng về trang đăng nhập
         ├── gddangnhap4.jsp              # Giao diện Đăng nhập
@@ -119,7 +120,8 @@ Hệ thống đã tích hợp sẵn web runner hoàn chỉnh, bạn có thể ch
 ---
 
 ## 🧪 Chạy Kiểm thử Đơn vị (Unit Test)
-Dự án cung cấp 3 bộ kiểm thử JUnit 4 cho các DAO:
-- `TestMatHangDAO4`: Kiểm thử tìm kiếm theo tên và chi tiết mặt hàng.
-- `TestTKKhachHangDAO4`: Kiểm thử thống kê doanh thu theo khoảng thời gian và sắp xếp giảm dần.
-- `TestHoaDonDAO4`: Kiểm thử trích xuất hóa đơn của khách hàng.
+Dự án cung cấp đầy đủ 4 bộ kiểm thử JUnit 4 tương ứng cho 4 lớp DAO chính:
+- `TestMatHangDAO4`: Kiểm thử tìm kiếm theo từ khóa (có thực, rỗng, null, không tồn tại) và lấy chi tiết mặt hàng (id hợp lệ, id âm, id = 0, id không tồn tại).
+- `TestTKKhachHangDAO4`: Kiểm thử thống kê doanh thu theo khoảng thời gian, kiểm tra quy tắc sắp xếp giảm dần theo doanh thu, các trường hợp biên ngày và ngoại lệ ngày BD > ngày KT hoặc null.
+- `TestHoaDonDAO4`: Kiểm thử lấy danh sách hóa đơn theo khách hàng và khoảng thời gian, chi tiết mặt hàng từng hóa đơn và các trường hợp id không tồn tại.
+- `TestThanhVienDAO4`: Kiểm thử đăng nhập Quản lý, Khách hàng, sai mật khẩu, tài khoản không tồn tại, và đăng ký trùng lặp.

@@ -155,3 +155,138 @@ INSERT INTO `tblHoaDonChiTiet4` (`id`, `soluong`, `dongia`, `tblHoaDon4id`, `tbl
 (7, 30, 40000, 3, 4),
 (8, 10, 10000, 3, 5);
 
+-- =======================================================
+-- CÁC STORED PROCEDURES (CHUẨN JDBC CALLABLESTATEMENT)
+-- =======================================================
+
+DELIMITER //
+
+-- 1. Kiểm tra đăng nhập
+DROP PROCEDURE IF EXISTS `sp_kiemTraDangNhap4` //
+CREATE PROCEDURE `sp_kiemTraDangNhap4`(
+    IN p_username VARCHAR(255),
+    IN p_password VARCHAR(255)
+)
+BEGIN
+    SELECT id, username, password, hoten, diachi, email, dt, vaitro
+    FROM tblThanhVien4
+    WHERE username = p_username AND password = p_password;
+END //
+
+-- 2. Đăng ký thành viên Khách hàng
+DROP PROCEDURE IF EXISTS `sp_dangKyKhachHang4` //
+CREATE PROCEDURE `sp_dangKyKhachHang4`(
+    IN p_username VARCHAR(255),
+    IN p_password VARCHAR(255),
+    IN p_hoten VARCHAR(255),
+    IN p_diachi VARCHAR(255),
+    IN p_email VARCHAR(255),
+    IN p_dt VARCHAR(255),
+    IN p_makh VARCHAR(50),
+    OUT p_status INT
+)
+BEGIN
+    DECLARE v_tv_id INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_status = 0;
+    END;
+
+    START TRANSACTION;
+    IF EXISTS (SELECT 1 FROM tblThanhVien4 WHERE username = p_username) OR
+       EXISTS (SELECT 1 FROM tblKhachHang4 WHERE makh = p_makh) THEN
+        SET p_status = 0;
+        ROLLBACK;
+    ELSE
+        INSERT INTO tblThanhVien4 (username, password, hoten, diachi, email, dt, vaitro)
+        VALUES (p_username, p_password, p_hoten, p_diachi, p_email, p_dt, 'KhachHang');
+        SET v_tv_id = LAST_INSERT_ID();
+
+        INSERT INTO tblKhachHang4 (makh, tblThanhVien4Id)
+        VALUES (p_makh, v_tv_id);
+
+        COMMIT;
+        SET p_status = v_tv_id;
+    END IF;
+END //
+
+-- 3. Tìm kiếm mặt hàng theo tên (Module 1)
+DROP PROCEDURE IF EXISTS `sp_timMatHangTheoTen4` //
+CREATE PROCEDURE `sp_timMatHangTheoTen4`(
+    IN p_ten VARCHAR(255)
+)
+BEGIN
+    SELECT mh.id, mh.mamh, mh.ten, mh.donvitinh, mh.dongia, mh.soluongton, mh.mota,
+           lmh.id AS loai_id, lmh.ten AS loai_ten, lmh.mota AS loai_mota
+    FROM tblMatHang4 mh
+    LEFT JOIN tblLoaiMatHang4 lmh ON mh.tblLoaiMatHang4id = lmh.id
+    WHERE mh.ten LIKE CONCAT('%', p_ten, '%')
+    ORDER BY mh.ten ASC;
+END //
+
+-- 4. Lấy chi tiết mặt hàng theo id (Module 1)
+DROP PROCEDURE IF EXISTS `sp_getChiTietMatHang4` //
+CREATE PROCEDURE `sp_getChiTietMatHang4`(
+    IN p_id INT
+)
+BEGIN
+    SELECT mh.id, mh.mamh, mh.ten, mh.donvitinh, mh.dongia, mh.soluongton, mh.mota,
+           lmh.id AS loai_id, lmh.ten AS loai_ten, lmh.mota AS loai_mota
+    FROM tblMatHang4 mh
+    LEFT JOIN tblLoaiMatHang4 lmh ON mh.tblLoaiMatHang4id = lmh.id
+    WHERE mh.id = p_id;
+END //
+
+-- 5. Thống kê khách hàng theo doanh thu (Module 2)
+DROP PROCEDURE IF EXISTS `sp_getTKKhachHangTheoDoanhThu4` //
+CREATE PROCEDURE `sp_getTKKhachHangTheoDoanhThu4`(
+    IN p_ngayBD DATE,
+    IN p_ngayKT DATE
+)
+BEGIN
+    SELECT tv.id, kh.makh, tv.hoten, tv.diachi, tv.email, tv.dt, tv.vaitro,
+           COUNT(hd.id) AS tongsoHD, SUM(hd.tongtien) AS tongDoanhThu
+    FROM tblHoaDon4 hd
+    JOIN tblKhachHang4 kh ON hd.tblKhachHang4tblThanhVien4Id = kh.tblThanhVien4Id
+    JOIN tblThanhVien4 tv ON kh.tblThanhVien4Id = tv.id
+    WHERE hd.ngaylap >= p_ngayBD AND hd.ngaylap <= p_ngayKT
+    GROUP BY tv.id, kh.makh, tv.hoten, tv.diachi, tv.email, tv.dt, tv.vaitro
+    ORDER BY tongDoanhThu DESC;
+END //
+
+-- 6. Lấy danh sách hóa đơn theo khách hàng và ngày (Module 2)
+DROP PROCEDURE IF EXISTS `sp_getHoaDonCuaKH4` //
+CREATE PROCEDURE `sp_getHoaDonCuaKH4`(
+    IN p_idKH INT,
+    IN p_ngayBD DATE,
+    IN p_ngayKT DATE
+)
+BEGIN
+    SELECT hd.id, hd.mahd, hd.ngaylap, hd.trangthai, hd.tongtien, hd.ghichu,
+           kh.makh, tv.hoten, tv.diachi, tv.email, tv.dt
+    FROM tblHoaDon4 hd
+    JOIN tblKhachHang4 kh ON hd.tblKhachHang4tblThanhVien4Id = kh.tblThanhVien4Id
+    JOIN tblThanhVien4 tv ON kh.tblThanhVien4Id = tv.id
+    WHERE hd.tblKhachHang4tblThanhVien4Id = p_idKH
+      AND (p_ngayBD IS NULL OR hd.ngaylap >= p_ngayBD)
+      AND (p_ngayKT IS NULL OR hd.ngaylap <= p_ngayKT)
+    ORDER BY hd.ngaylap DESC;
+END //
+
+-- 7. Lấy chi tiết các mặt hàng trong hóa đơn
+DROP PROCEDURE IF EXISTS `sp_getChiTietHoaDon4` //
+CREATE PROCEDURE `sp_getChiTietHoaDon4`(
+    IN p_idHD INT
+)
+BEGIN
+    SELECT ct.id, ct.soluong, ct.dongia,
+           mh.id AS mh_id, mh.mamh, mh.ten AS mh_ten, mh.donvitinh
+    FROM tblHoaDonChiTiet4 ct
+    JOIN tblMatHang4 mh ON ct.tblMatHang4id = mh.id
+    WHERE ct.tblHoaDon4id = p_idHD;
+END //
+
+DELIMITER ;
+
+
