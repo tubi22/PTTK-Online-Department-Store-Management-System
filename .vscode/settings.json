@@ -1,0 +1,10 @@
+{
+    "java.project.sourcePaths": [
+        "qlCuaHang4/Java Resources/src"
+    ],
+    "java.project.referencedLibraries": [
+        "qlCuaHang4/WebContent/WEB-INF/lib/**/*.jar",
+        "qlCuaHang4/Java Resources/Libraries/**/*.jar"
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
+}
