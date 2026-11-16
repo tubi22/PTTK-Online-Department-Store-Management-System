@@ -51,3 +51,4 @@ public class TKKhachHangDAO4 extends DAO4 {
         return list;
     }
 }
+

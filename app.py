@@ -158,17 +158,7 @@ def init_db():
 def get_db():
     return sqlite3.connect(DB_FILE)
 
-class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    daemon_threads = True
-    allow_reuse_address = True
-
 class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"
-
-    def log_message(self, format, *args):
-        # Clean logging format
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {args[0]} - {args[1]}")
-
     def get_session(self):
         cookies = self.headers.get('Cookie', '')
         for c in cookies.split(';'):
@@ -185,21 +175,16 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
         return sid
 
     def send_html(self, content, status=200, cookie=None):
-        encoded = content.encode('utf-8')
         self.send_response(status)
         self.send_header('Content-Type', 'text/html; charset=UTF-8')
-        self.send_header('Content-Length', str(len(encoded)))
-        self.send_header('Connection', 'close')
         if cookie:
             self.send_header('Set-Cookie', cookie)
         self.end_headers()
-        self.wfile.write(encoded)
+        self.wfile.write(content.encode('utf-8'))
 
     def redirect(self, location, cookie=None):
         self.send_response(302)
         self.send_header('Location', location)
-        self.send_header('Content-Length', '0')
-        self.send_header('Connection', 'close')
         if cookie:
             self.send_header('Set-Cookie', cookie)
         self.end_headers()
@@ -209,35 +194,22 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path
         qs = urllib.parse.parse_qs(parsed.query)
 
-        if path == '/favicon.ico':
-            self.send_response(204)
-            self.send_header('Content-Length', '0')
-            self.send_header('Connection', 'close')
-            self.end_headers()
-            return
-
         user, sid = self.get_session()
 
         if path in ['/', '/index.jsp', '/index.html']:
-            if user:
-                if user['vaitro'] == 'NVQuanLi':
-                    self.redirect('/ql/gdchinhql4.jsp')
-                else:
-                    self.redirect('/kh/gdchinhkh4.jsp')
-            else:
-                self.redirect('/gddangnhap4.jsp')
+            # Bat buoc dang nhap lai moi khi truy cap trang chu
+            if sid and sid in SESSIONS:
+                del SESSIONS[sid]
+            self.redirect('/gddangnhap4.jsp', cookie="SESSIONID=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT")
             return
 
         elif path == '/gddangnhap4.jsp':
-            if user:
-                if user['vaitro'] == 'NVQuanLi':
-                    self.redirect('/ql/gdchinhql4.jsp')
-                else:
-                    self.redirect('/kh/gdchinhkh4.jsp')
-                return
+            # Khi vao trang dang nhap, luon xoa phien cu de yeu cau nhap lai
+            if sid and sid in SESSIONS:
+                del SESSIONS[sid]
             error = qs.get('error', [''])[0]
             msg = qs.get('message', [''])[0]
-            self.render_login(error, msg)
+            self.render_login(error, msg, cookie="SESSIONID=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT" if sid else None)
 
         elif path == '/gddangky4.jsp':
             error = qs.get('error', [''])[0]
@@ -246,7 +218,7 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
         elif path == '/dodangxuat4.jsp':
             if sid and sid in SESSIONS:
                 del SESSIONS[sid]
-            self.redirect('/gddangnhap4.jsp?message=' + urllib.parse.quote('Đã đăng xuất an toàn khỏi hệ thống.'))
+            self.redirect('/gddangnhap4.jsp?message=' + urllib.parse.quote('Đã đăng xuất an toàn khỏi hệ thống.'), cookie="SESSIONID=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT")
 
         elif path == '/kh/gdchinhkh4.jsp':
             if not user:
@@ -367,7 +339,7 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, "Action Not Found")
 
     # Render methods
-    def render_login(self, error, message):
+    def render_login(self, error, message, cookie=None):
         alert_err = f'<div style="background:#ffebee;color:#c62828;padding:10px 14px;border-radius:6px;margin-bottom:15px;border:1px solid #ffcdd2;">{error}</div>' if error else ''
         alert_msg = f'<div style="background:#e8f5e9;color:#2e7d32;padding:10px 14px;border-radius:6px;margin-bottom:15px;border:1px solid #c8e6c9;">{message}</div>' if message else ''
         
@@ -420,7 +392,7 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
     </div>
 </body>
 </html>"""
-        self.send_html(html)
+        self.send_html(html, cookie=cookie)
 
     def render_register(self, error):
         alert_err = f'<div style="background:#ffebee;color:#c62828;padding:10px 14px;border-radius:6px;margin-bottom:15px;">{error}</div>' if error else ''
@@ -913,7 +885,7 @@ class DepartmentStoreHandler(http.server.BaseHTTPRequestHandler):
 
 def run():
     init_db()
-    with ThreadedHTTPServer(("", PORT), DepartmentStoreHandler) as httpd:
+    with socketserver.TCPServer(("", PORT), DepartmentStoreHandler) as httpd:
         print(f"============================================================")
         print(f"  HE THONG QUAN LY CUA HANG BACH HOA TRUC TUYEN (qlCuaHang4)")
         print(f"  Server dang chay tai: http://localhost:{PORT}")

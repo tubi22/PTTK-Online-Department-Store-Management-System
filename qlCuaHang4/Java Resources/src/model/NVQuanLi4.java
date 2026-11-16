@@ -14,3 +14,4 @@ public class NVQuanLi4 extends NhanVien4 implements Serializable {
         super(id, username, password, hoten, diachi, email, dt, vaitro, vitri);
     }
 }
+

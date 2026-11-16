@@ -54,3 +54,4 @@ public class TestTKKhachHangDAO4 {
         assertEquals(0, list.size());
     }
 }
+

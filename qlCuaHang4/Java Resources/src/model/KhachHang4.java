@@ -24,3 +24,4 @@ public class KhachHang4 extends ThanhVien4 implements Serializable {
         this.makh = makh;
     }
 }
+

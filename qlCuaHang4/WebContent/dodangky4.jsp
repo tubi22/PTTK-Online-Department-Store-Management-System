@@ -39,3 +39,4 @@
         response.sendRedirect(request.getContextPath() + "/gddangky4.jsp?error=" + java.net.URLEncoder.encode("Tên đăng nhập hoặc Mã khách hàng đã tồn tại trên hệ thống!", "UTF-8"));
     }
 %>
+

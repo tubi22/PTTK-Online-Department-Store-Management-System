@@ -1,15 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="model.ThanhVien4" %>
 <%
-    ThanhVien4 user = (ThanhVien4) session.getAttribute("user");
-    if (user != null) {
-        if ("NVQuanLi".equalsIgnoreCase(user.getVaitro())) {
-            response.sendRedirect(request.getContextPath() + "/ql/gdchinhql4.jsp");
-            return;
-        } else {
-            response.sendRedirect(request.getContextPath() + "/kh/gdchinhkh4.jsp");
-            return;
-        }
+    // Xóa session cũ nếu có để bắt buộc đăng nhập lại mỗi khi mở/thoát vào trang đăng nhập
+    if (session != null) {
+        session.removeAttribute("user");
     }
     String error = (String) request.getAttribute("error");
     if (error == null) {
@@ -86,3 +80,4 @@
     </div>
 </body>
 </html>
+

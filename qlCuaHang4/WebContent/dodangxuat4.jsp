@@ -5,3 +5,4 @@
     }
     response.sendRedirect(request.getContextPath() + "/gddangnhap4.jsp?message=" + java.net.URLEncoder.encode("Đã đăng xuất an toàn khỏi hệ thống.", "UTF-8"));
 %>
+

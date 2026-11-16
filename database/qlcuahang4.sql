@@ -154,3 +154,4 @@ INSERT INTO `tblHoaDonChiTiet4` (`id`, `soluong`, `dongia`, `tblHoaDon4id`, `tbl
 (6, 25, 34000, 3, 6),
 (7, 30, 40000, 3, 4),
 (8, 10, 10000, 3, 5);
+

@@ -34,3 +34,4 @@ public class TKKhachHang4 extends KhachHang4 implements Serializable {
         this.tongDoanhThu = tongDoanhThu;
     }
 }
+

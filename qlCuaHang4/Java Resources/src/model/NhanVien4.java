@@ -24,3 +24,4 @@ public class NhanVien4 extends ThanhVien4 implements Serializable {
         this.vitri = vitri;
     }
 }
+
